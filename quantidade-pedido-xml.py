@@ -22,17 +22,19 @@ def process_xml(file):
             item = pedido.find("Item").text if pedido.find("Item") is not None else ""
             codigo_fab = pedido.find("CodigoFab").text if pedido.find("CodigoFab") is not None else ""
             descricao_resumida = pedido.find("DescricaoResumida").text if pedido.find("DescricaoResumida") is not None else ""
-            qtde = pedido.find("Qtde").text if pedido.find("Qtde") is not None else ""
-            qtde = qtde.replace(".", ",") if qtde else ""
-            qtde_emb = pedido.find("QtdeEmb").text if pedido.find("QtdeEmb") is not None else ""
+            qtde = pedido.find("Qtde").text if pedido.find("Qtde") is not None else "0"
+            qtde_emb = pedido.find("QtdeEmb").text if pedido.find("QtdeEmb") is not None else "0"
             ncm = pedido.find("NCM").text if pedido.find("NCM") is not None else ""
             cnpj = pedido.find("CNPJLojaCompradora").text if pedido.find("CNPJLojaCompradora") is not None else ""
             cnpj = f"'{cnpj}" if cnpj else ""
             
+            qtde = int(float(qtde))  # Corrige problema de multiplicação errada
+            qtde_emb = int(float(qtde_emb))
+            
             data.append([grupo, entrega, loja_compradora, item, codigo_fab, descricao_resumida, qtde, qtde_emb, ncm, cnpj])
             
             # Atualiza o resumo de quantidade total por item
-            item_summary[(codigo_fab, descricao_resumida)]["Qtde Total"] += int(qtde.replace(",", "")) if qtde else 0
+            item_summary[(codigo_fab, descricao_resumida)]["Qtde Total"] += qtde
             item_summary[(codigo_fab, descricao_resumida)]["QtdeEmb"] = qtde_emb
             item_summary[(codigo_fab, descricao_resumida)]["NCM"] = ncm
         
@@ -77,7 +79,7 @@ if uploaded_files:
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             df.to_excel(writer, sheet_name='Dados Extraídos', index=False)
             summary_df.to_excel(writer, sheet_name='Resumo Quantidades', index=False)
-            writer.save()
+            writer.close()
         output.seek(0)
         
         # Botão para baixar o Excel
